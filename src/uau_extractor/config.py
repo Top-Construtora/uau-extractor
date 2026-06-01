@@ -24,6 +24,11 @@ class Settings:
     # Usuário/senha do sistema UAU (AutenticarUsuario)
     login: str
     senha: str
+    # Alvo da extração de obras
+    empresa: str = ""
+    obra: str = ""
+    # Margem (s) subtraída da expiração do token de gateway
+    token_margem_s: int = 60
     # Destino: Postgres Supabase
     db_url: str = ""
     # Supabase Storage (snapshot do JSON bruto) — opcional
@@ -42,6 +47,9 @@ def carregar() -> Settings:
         trinus_basic=os.environ["UAU_TRINUS_BASIC"],
         login=os.environ["UAU_LOGIN"],
         senha=os.environ["UAU_SENHA"],
+        empresa=os.environ.get("UAU_EMPRESA", ""),
+        obra=os.environ.get("UAU_OBRA", ""),
+        token_margem_s=int(os.environ.get("UAU_TOKEN_MARGEM_S", "60")),
         db_url=os.environ.get("SUPABASE_DB_URL", ""),
         supabase_url=os.environ.get("SUPABASE_URL", ""),
         supabase_service_key=os.environ.get("SUPABASE_SERVICE_KEY", ""),
