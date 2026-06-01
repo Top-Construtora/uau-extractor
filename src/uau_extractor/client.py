@@ -65,7 +65,7 @@ class UauClient:
             json={"grant_type": "client_credentials"},
         )
         if r.status_code != 200:
-            raise UauAuthError(f"auth do gateway falhou: {r.status_code} {r.text}")
+            raise UauAuthError(f"auth do gateway falhou: {r.status_code}")
         data = r.json()
         self._gateway_token = data["access_token"]
         expira = int(data.get("expires_in", 86400))
@@ -84,13 +84,15 @@ class UauClient:
             json={"login": self.s.login, "Senha": self.s.senha},
         )
         if r.status_code != 200:
-            raise UauAuthError(f"auth de usuário falhou: {r.status_code} {r.text}")
+            raise UauAuthError(f"auth de usuário falhou: {r.status_code}")
         self._user_token = _extrair_token_usuario(r.json())
 
     def _ensure_auth(self) -> None:
         if self._gateway_token is None or self._now() >= self._gateway_exp:
             self._auth_gateway()
             self._user_token = None  # gateway novo -> usuário também renova
+        # O TTL do token de usuário não é documentado e não é rastreado:
+        # ele é renovado reativamente no 401 (custa 1 round-trip por expiração).
         if self._user_token is None:
             self._auth_user()
 
@@ -119,7 +121,9 @@ class UauClient:
             return r
         if isinstance(ultimo, httpx.Response):
             return ultimo
-        raise UauAuthError(f"falha de transporte após {self._max_retries} tentativas: {ultimo}")
+        if isinstance(ultimo, BaseException):
+            raise ultimo
+        raise UauAuthError("falha sem resposta nem exceção registrada")  # defensivo
 
     def request(self, method: str, endpoint: str, json=None) -> httpx.Response:
         url = f"{self.s.api_base_url}/{endpoint.lstrip('/')}"
@@ -131,7 +135,7 @@ class UauClient:
             self._ensure_auth()
             r = self._enviar(method, url, json)
             if r.status_code in (401, 403):
-                raise UauAuthError(f"401/403 após re-autenticação: {r.text}")
+                raise UauAuthError(f"401/403 após re-autenticação: {r.status_code}")
         r.raise_for_status()
         return r
 

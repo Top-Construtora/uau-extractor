@@ -76,5 +76,20 @@ def test_retry_em_500():
     r = c.post("Obra/Consultar", {})
     assert r.status_code == 200
     assert api.gateway_calls == 1
+    assert api.user_calls == 1
     assert api.data_calls == 2
+    c.close()
+
+
+def test_borda_da_margem_de_expiracao():
+    api = FakeApi()
+    clock = Clock(1000.0)
+    c = build(api, clock)
+    c.post("Obra/Consultar", {})   # gateway_exp = 1000 + 86400 - 60 = 87340
+    clock.t = 87339.0              # 1s antes da expiração -> NÃO renova
+    c.post("Obra/Consultar", {})
+    assert api.gateway_calls == 1
+    clock.t = 87340.0             # exatamente na expiração -> renova
+    c.post("Obra/Consultar", {})
+    assert api.gateway_calls == 2
     c.close()
