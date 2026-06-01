@@ -64,7 +64,7 @@ class UauClient:
                      "Content-Type": "application/json"},
             json={"grant_type": "client_credentials"},
         )
-        if r.status_code != 200:
+        if not (200 <= r.status_code < 300):  # Trinus devolve 201 no /oauth/access-token
             raise UauAuthError(f"auth do gateway falhou: {r.status_code}")
         data = r.json()
         self._gateway_token = data["access_token"]
@@ -83,7 +83,7 @@ class UauClient:
             },
             json={"login": self.s.login, "Senha": self.s.senha},
         )
-        if r.status_code != 200:
+        if not (200 <= r.status_code < 300):
             raise UauAuthError(f"auth de usuário falhou: {r.status_code}")
         self._user_token = _extrair_token_usuario(r.json())
 

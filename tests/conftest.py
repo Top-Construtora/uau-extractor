@@ -42,7 +42,7 @@ class FakeApi:
         path = request.url.path
         if path.endswith("/oauth/access-token"):
             self.gateway_calls += 1
-            return httpx.Response(200, json={
+            return httpx.Response(201, json={  # Trinus devolve 201 Created
                 "access_token": f"GW{self.gateway_calls}",
                 "token_type": "access_token",
                 "expires_in": 86400,
